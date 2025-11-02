@@ -1,0 +1,28 @@
+[build-system]
+requires = [
+"yahooquery>=2.4.1",
+"scipy>=1.9.2",
+"plotly>=4.14.3",
+"pandas>=1.9.0",
+"numpy>=1.22.4"
+]
+build-backend = "setuptools.build_meta"
+[project]
+name = "skm_black_scholes"
+version = "0.0.1"
+authors = [
+  { name="Steven McWilliams", email="skmcwilliams@protonmail.com" },
+]
+description = "A function that values options prices and provides supporting visuals"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+
+[project.urls]
+Homepage = "https://github.com/skmcwilliams/skm_black_scholes"
+Issues = "https://github.com/skmcwilliams/skm_black_scholes/issues"
