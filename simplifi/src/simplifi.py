@@ -14,6 +14,15 @@ from bs4 import BeautifulSoup as bs
 import requests
 from urllib.request import urlopen
 import json
+from sklearn import tree, linear_model
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split as tts,cross_val_score  as cvs, StratifiedKFold
+from sklearn.ensemble import HistGradientBoostingRegressor as GB
+from yellowbrick.regressor import ResidualsPlot
+from yellowbrick.classifier import confusion_matrix,precision_recall_curve,classification_report
+import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings(action='ignore', category=UserWarning)  #ignore sklearn warning at train_test_split
 # %%
 class Simplifi:
     def __init__(self,ticker:str):
@@ -183,6 +192,152 @@ class Simplifi:
         print(f"Risk Free Rate: {round(rfr*100,2)}%")
         print(f"Expected Market Return: {round(rm*100,2)}%")
         return re
+    
+#%%
+    warnings.filterwarnings(action='ignore', category=UserWarning)  #ignore sklearn warning at train_test_split
+    #%% get_historical_data
+    def get_historical_data(ticker,dte):
+        """use yahooquery to pull historical data based on ticker, period requested, and interval requested"""
+        
+        global d
+        d = dte
+        # pull data for required period and create custom columns
+        main = yq.Ticker(ticker).history(period='max',interval='1d').reset_index() # get all data at max time for sma calcs
+        ten = yq.Ticker('^tnx').history(period='max',interval='1d').reset_index().rename(columns={'close':'tenyr'})
+        main = main.merge(ten[['date','tenyr']],on='date',how='left')
+        
+        main = main.assign(
+            targetadjclose = lambda x: x['adjclose'].shift(-dte),
+            adjclosesma = lambda x: round(x['adjclose'].rolling(30).mean(),2),
+            highfib = lambda x: round(x['adjclose'].rolling(200).max() - ((x['adjclose'].rolling(200).max() -x['adjclose'].rolling(200).min())*0.236),2),
+            lowfib = lambda x: round(x['adjclose'].rolling(200).min(),2) + \
+            ((round(x['adjclose'].rolling(200).max(),2)-round(x['adjclose'].rolling(200).min(),2))*0.236),
+            adjclosestd = lambda x: abs(round(x['adjclose'].rolling(200).std(),4)),
+            tenyrsma = lambda x: round(x['tenyr'].rolling(30).mean(),2),
+            tenyrstd = lambda x: abs(round(x['tenyr'].rolling(30).std(),4)),
+            tenyrsmastd = lambda x: x['tenyrstd']*x['tenyrsma'],
+            twohundredsma = lambda x: x['adjclose'].rolling(200).mean(),
+            fiftysma = lambda x: x['adjclose'].rolling(50).mean(),
+            higher_twohundred = lambda x: np.where(x['adjclose']>x['twohundredsma'],1,0),
+            higher_fifty = lambda x:  np.where(x['adjclose']>x['fiftysma'],1,0),
+            volumestd = lambda x: abs(x['volume'].rolling(30).std()),
+            volumesma = lambda x: x['volume'].rolling(30).mean(),
+            volumesmastd = lambda x: np.log(x['volumesma'] * x['volumestd']),
+            adjclosesmastd = lambda x: x['adjclosesma'] * x['adjclosestd'],
+            #twohundred_sma_diff_pct = lambda x: round(x['adjclose']/x['twohundredsma']),
+        # twohundred_sma_diff_doll = lambda x: round(x['twohundredsma']-x['adjclose']),
+            gainthirty = lambda x: ((x['adjclose']/x['adjclose'].shift(30))-1)*100,
+            gainseven = lambda x: ((x['adjclose']/x['adjclose'].shift(7))-1)*100,
+        # gainday = lambda x: ((x['adjclose']/x['adjclose'].shift(1))-1)*100,
+            logclose = lambda x: np.log(x['adjclose']),
+            logten = lambda x: np.log(x['tenyr'])
+            )
+        
+        start = np.random.choice(range(0,len(main)))
+        assert main['targetadjclose'].iloc[start]==main['adjclose'].iloc[start+dte],\
+        f"error at {start}:{main['targetadjclose'].iloc[start]=}, {start+100}:{main['adjclose'].iloc[start+30]}"
+
+
+        # select columns
+        final = main[['date',
+                    'symbol',
+                    'adjclose',
+                    'logclose',
+                    #'tenyr',
+                    #'adjclosesma',
+                    #'highfib',
+                    'higher_fifty',
+                    'higher_twohundred',
+                    #'lowfib',
+                    'adjclosestd',
+                    #'adjclosesmastd',
+                    # 'tenyrsma',
+                    # 'tenyrstd',
+                    # 'tenyrsmastd',
+                    #'twohundredsma',
+                    #'fiftysma',
+                    # 'volumesma',
+                    # 'volumestd',
+                    # 'volumesmastd',
+                    # 'gainday',
+                    'gainthirty',
+                    'gainseven',
+                    'targetadjclose',
+                    #'twohundred_sma_diff_doll',
+                    #'twohundred_sma_diff_pct'
+                    ]]
+        
+        final = round(final,2)
+        return final
+    
+    def score_model(x_train,x_test,y_train,y_test,y_hat,dataframe,ticker,model,dte):
+        df = dataframe.copy()
+        global mape
+        global testpreds
+        testpreds = x_test.copy() # new df of x_test to join with yhat and date
+        testpreds['yhat'] = y_hat # yhat will be ordered by x_test
+        testpreds['actual'] = y_test # y_testw ill be ordered by x_test
+        testpreds = testpreds.join(df['date'],how='left').sort_values('date').dropna() #join date on index 
+        testpreds['residual'] = testpreds['yhat'] - testpreds['actual']
+        testpreds['sqres'] = testpreds['residual']**2
+        testpreds['ssr'] = (testpreds['yhat'] - testpreds['actual'].mean())**2
+        mape = round(np.mean(np.abs((testpreds['actual'] - testpreds['yhat']) / testpreds['actual'])) * 100,2)
+    
+        # print(f"Model Results on Test Data {ticker} {dte} DTE \n")
+        sse =  round(testpreds['sqres'].sum(),2)            
+        ssr = round(testpreds['ssr'].sum(),2)
+        tss = round(ssr+sse,2)
+        rsquared = round(ssr/tss,3)
+        mse = round(mean_squared_error(y_test,y_hat),2)
+        rmse = round(np.sqrt(mse),2)
+        normrmse = round(rmse/(df['targetadjclose'].max() - df['targetadjclose'].min()),3) # is extremeley low, rmse is strong relative to 'close' range
+        measures = ['SSE', 'SSR', 'TSS', 'r2', 'MSE','RMSE','Normalized RMSE','MAPE']
+        results = [sse,ssr,tss,rsquared,mse,rmse,normrmse,f'{mape}%']
+        resdf = pd.DataFrame(list(zip(measures,results)),columns=['Metric','Score'])
+        
+        
+    #  print(f"PREDICTION ON TODAY'S {ticker} DATA in {dte} DTE")
+        current_df = df[(df['targetadjclose'].isna()) * (df['date']==max(df['date']))]
+        current_df.insert(1,'dte',dte)
+        curr_x = current_df.drop(columns=['date','dte','targetadjclose','symbol','adjclose'])
+        currpreds = list(map(lambda x: round(x,2),model.predict(curr_x)))
+        current_df.insert(3,'yhat',currpreds)
+        current_df = current_df.assign(
+            yhat_low = lambda x: round(x['yhat']*(1-((mape*0.5)/100)),2),
+            yhat_high = lambda x: round(x['yhat']*(1+((mape*0.5)/100)),2))
+        return current_df[['dte','yhat','yhat_low','yhat_high']]
+        
+
+    def run_regression(ticker,dte):
+    
+        dte_yhats = pd.DataFrame()
+        for i in range(1,dte+1):
+        
+            main = get_historical_data(ticker, i)
+            df = main.dropna().reset_index(drop=True)
+            x_train, x_test, y_train, y_test = tts(df.drop(columns=['date','targetadjclose','symbol','adjclose']),df['targetadjclose'],
+                                                        test_size=0.01,shuffle=False,random_state=42)
+            model =  GB() #tree.DecisionTreeRegressor(max_depth=10,min_samples_split=5,criterion='squared_error')
+            model = model.fit(x_train, y_train)
+        
+        
+            y_hat = [round(x,2) for x in model.predict(x_test)]
+            new_yhat = score_model(x_train,x_test,y_train,y_test,y_hat,main,ticker,model,i)
+            dte_yhats = pd.concat([dte_yhats,new_yhat])
+            
+        plt.plot(dte_yhats['dte'],dte_yhats['yhat'])
+        plt.plot(dte_yhats['dte'],dte_yhats['yhat_high'])
+        plt.plot(dte_yhats['dte'],dte_yhats['yhat_low'])
+        plt.legend(['Yhat','Yhat-High','Yhat-Low'])
+        plt.title(f"{ticker.upper()} Model Predictions")
+        plt.show()
+        
+        print(dte_yhats)
+            
+    
+        
+#%%RUN Regression
+run_regression('itot',20)
             
 
             
