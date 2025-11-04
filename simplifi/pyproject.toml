@@ -6,8 +6,7 @@ build-backend = "hatchling.build"
 name = "simplifi"
 version = "1.0.1"
 authors = [
-  { name="Steven McWilliams", 
-  email="skmcwilliams@protonmail.com" },
+  { name="Steven McWilliams", email="skmcwilliams@protonmail.com" },
 ]
 description = "Class for Black-Scholes option pricing and Greeks calculation with real-time data integration."
 readme = "README.md"
