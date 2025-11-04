@@ -15,13 +15,8 @@ executing==2.2.1
 fonttools==4.60.1
 html5lib==1.1
 idna==3.11
-ipykernel==7.1.0
-ipython==9.6.0
-ipython_pygments_lexers==1.1.1
 jedi==0.19.2
 joblib==1.5.2
-jupyter_client==8.6.3
-jupyter_core==5.9.1
 kiwisolver==1.4.9
 lxml==6.0.2
 matplotlib==3.10.7
@@ -48,7 +43,6 @@ pytz==2025.2
 pyzmq==27.1.0
 requests==2.32.5
 requests-futures==1.0.2
-scikit-learn==1.7.2
 scipy==1.16.3
 six==1.17.0
 soupsieve==2.8
@@ -63,4 +57,3 @@ urllib3==2.5.0
 wcwidth==0.2.14
 webencodings==0.5.1
 yahooquery==2.4.1
-yellowbrick==1.5
