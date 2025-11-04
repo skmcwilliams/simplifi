@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "simplifi"
+version = "1.0.1"
+authors = [
+  { name="Steven McWilliams", email="skmcwilliams@protonmail.com" },
+]
+description = "Class for Black-Scholes option pricing and Greeks calculation with real-time data integration."
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+
+[project.urls]
+Homepage = "https://github.com/skmcwilliams/simplifi"
+Issues = "https://github.com/skmcwilliams/simplifi/issues"
