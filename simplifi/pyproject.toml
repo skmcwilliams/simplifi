@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "simplifi"
-version = "1.0.1"
+version = "1.0.9"
 authors = [
   { name="Steven McWilliams", email="skmcwilliams@protonmail.com" },
 ]
-description = "Class for Black-Scholes option pricing and Greeks calculation with real-time data integration."
+description = "Financial Analysis Made Simple"
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
@@ -31,7 +31,7 @@ Homepage = "https://github.com/skmcwilliams/simplifi"
 Issues = "https://github.com/skmcwilliams/simplifi/issues"
 
 [tool.bumpver]
-current_version = "1.0.6"
+current_version = "1.0.9"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message  = "Bump version {old_version} -> {new_version}"
 commit          = true
