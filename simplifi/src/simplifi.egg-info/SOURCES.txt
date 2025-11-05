@@ -1,0 +1,10 @@
+LICENSE
+README.md
+pyproject.toml
+src/__init__.py
+src/simplifi.py
+src/simplifi.egg-info/PKG-INFO
+src/simplifi.egg-info/SOURCES.txt
+src/simplifi.egg-info/dependency_links.txt
+src/simplifi.egg-info/requires.txt
+src/simplifi.egg-info/top_level.txt

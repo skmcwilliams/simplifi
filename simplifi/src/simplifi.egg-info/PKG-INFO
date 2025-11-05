@@ -1,3 +1,25 @@
+Metadata-Version: 2.4
+Name: simplifi
+Version: 1.0.1
+Summary: Class for Black-Scholes option pricing and Greeks calculation with real-time data integration.
+Author-email: Steven McWilliams <skmcwilliams@protonmail.com>
+License-Expression: GPL-3.0-or-later
+Project-URL: Homepage, https://github.com/skmcwilliams/simplifi
+Project-URL: Issues, https://github.com/skmcwilliams/simplifi/issues
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: numpy>=1.23
+Requires-Dist: pandas>=1.5
+Requires-Dist: scipy>=1.10
+Requires-Dist: plotly>=5.0
+Requires-Dist: yahooquery>=2.2
+Requires-Dist: requests>=2.28
+Requires-Dist: beautifulsoup4>=4.11
+Dynamic: license-file
+
 # Simplifi
 
 A comprehensive Python library for financial analysis and stock market data visualization. This library combines data from multiple sources including Yahoo Finance and Finviz to provide a rich set of financial analysis tools.

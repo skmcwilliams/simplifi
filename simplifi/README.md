@@ -1,22 +1,33 @@
 # Simplifi
 
-A comprehensive Python library for financial analysis and stock market data visualization. This library combines data from multiple sources including Yahoo Finance and Finviz to provide a rich set of financial analysis tools.
+A comprehensive Python library for financial analysis and stock market data visualization. This library combines data from multiple sources including Yahoo Finance to provide a rich set of financial analysis tools.
 
 ## Features
 
 - **Historical Data Analysis**
-  - Fetch and process 30-day historical data
-  - Calculate average prices and logarithmic returns
-  - Generate OHLC (Open-High-Low-Close) candlestick charts with volume
+  - Fetch and process historical data from YahooQuery (Yahoo Finance)
+  - Calculate average prices and logarithmic returns for BlackScholes model, along with moving averages for technical analysis
+  - Option tog generate interactive OHLC (Open-High-Low-Close) candlestick chart including additional measures such as moving average and volume
+  - Interactive buttons to select various time-based views and select/unselect data points
+  - Returns historical dataframe with additional calculations
 
 - **Options Analysis**
   - Black-Scholes option pricing model implementation
-  - Options chain analysis
+  - Prices entire options chain and returns pandas dataframe of prices
 
 - **Dividend Discount Model**
   - Fetch stock valuation based on DDM calculations
   - Cost of Equity calculations
   - Risk-free rate analysis based on 10yr Treasury
+
+**Get 10 Year**
+  - Returns float of the 10-year treasury, a standard risk-free-rate
+  - Cost of Equity calculations
+  - Risk-free rate analysis based on 10yr Treasury
+
+**Get CAPM Return**
+  - Returns float expected return using Capital Asset Pricing Model, prints results and assumptions to terminal
+  - Based on standard annual 8.5% target return, can be overriden using optional target_return parameter
 
 ## Installation
 
@@ -84,4 +95,4 @@ See the LICENSE file for details.
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Please feel free to submit a Pull Request.
