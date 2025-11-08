@@ -32,7 +32,7 @@ A comprehensive Python library for financial analysis and stock market data visu
 ## Installation
 
 ```bash
-pip install simplifi
+git clone https://github.com/skmcwilliams/simplifi
 ```
 
 ## Usage
