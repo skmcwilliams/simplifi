@@ -1,7 +1,0 @@
-numpy>=1.23
-pandas>=1.5
-scipy>=1.10
-plotly>=5.0
-yahooquery>=2.2
-requests>=2.28
-beautifulsoup4>=4.11
