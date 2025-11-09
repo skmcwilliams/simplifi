@@ -8,15 +8,14 @@ import plotly.graph_objects as go
 import plotly.io as pio
 import plotly.express as px
 from plotly.subplots import make_subplots
+from regression import PredictiveModel
 pio.renderers.default = 'browser'
-import requests
-from bs4 import BeautifulSoup as bs
-from io import StringIO
 
 class Simplifi:
     def __init__(self,ticker:str):
         self.ticker = ticker
         self.yf = yq.Ticker(self.ticker)
+        self.model = PredictiveModel()
 
     def get_historical_data(self,make_ohlc:bool=False):
         hist = self.yf.history(period='10y',interval='1d').reset_index()
@@ -191,7 +190,10 @@ class Simplifi:
         print(f"Expected Market Return: {round(rm*100,2)}%")
         print(f"Simplifi CAPM Return: {round(capm*100,2)}%")
         return capm
-             
+    
+    def run_regression(self,dte:int, make_viz:bool=True)->pd.DataFrame:
+        dte_yhats, fig = self.model.run_regression(self.ticker,dte,vizualize=make_viz)
+        return dte_yhats
 # Testing
 if __name__ == '__main__':
     simplifi = Simplifi('ULTA')
@@ -199,3 +201,4 @@ if __name__ == '__main__':
     simplifi.get_historical_data(make_ohlc=True)
     simplifi.ddm_valuation()
     simplifi.get_capm_return(target_return=0.07)
+    simplifi.run_regression(dte=10,make_viz=True)

@@ -1,3 +1,4 @@
-.simplifi
+/simplifi
+/__pycache__
 .vscode
 *.pyc

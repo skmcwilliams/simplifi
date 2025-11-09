@@ -1,7 +1,5 @@
 appnope==0.1.4
 asttokens==3.0.0
-beautifulsoup4==4.14.2
-bs4==0.0.2
 certifi==2025.10.5
 cffi==2.0.0
 charset-normalizer==3.4.4
@@ -13,7 +11,6 @@ debugpy==1.8.17
 decorator==5.2.1
 executing==2.2.1
 fonttools==4.60.1
-html5lib==1.1
 idna==3.11
 jedi==0.19.2
 joblib==1.5.2
@@ -41,9 +38,8 @@ pyparsing==3.2.5
 python-dateutil==2.9.0.post0
 pytz==2025.2
 pyzmq==27.1.0
-requests==2.32.5
-requests-futures==1.0.2
 scipy==1.16.3
+scikit-learn==1.7.2
 six==1.17.0
 soupsieve==2.8
 stack-data==0.6.3
