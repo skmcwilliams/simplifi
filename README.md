@@ -11,6 +11,7 @@ A comprehensive Python library for financial analysis and stock market data visu
   - Chart includes additional measures such as moving average and volume
   - Interactive buttons to select various time-based views and select/unselect data points
   - Returns historical dataframe with additional calculations
+  - Click legend values to turn on/off variables, double click to show only the clicked variable
 
 - **Options Analysis**
   - Black-Scholes option pricing model implementation
@@ -74,21 +75,55 @@ options_analysis_df = stock.blackscholes()
 historical_data_df = stock.get_historical_data(make_ohlc=True)
 ```
 
-Example OHLC chart output:
+Example OHLC Chart:
 
 ![OHLC Chart Example](ohlc.png)
 
-Example Forecast chart output:
+Example Forecast Chart:
 
 ![Forecast Chart Example](predicted.png)
+
+Example Yahoo Finance Recommendations Chart:
+
+![Yahoo Finance Recommendations Chart Example](yahoofinance_recs.png)
+
+Example Volatility Chart:
+
+![Volatility Chart Example](volatility.png)
+
+Example Volatility Chart:
+
+![Free Cash Flows Chart Example](fcf.png)
 
 #### Dividend Discount Model Valuation
 ```python
 # Calculate stock valuation using DDM
 ddm_valuation = stock.ddm_valuation()
 
-# Future price prediction using regression 10 days out
-predicted_df = stock.run_regression(dte=10,visualize=True)
+# Future price prediction using regression 10 days out (use `make_viz` to show visualization)
+predicted_df = stock.run_regression(dte=10, make_viz=True)
+```
+
+### Other examples
+
+```python
+# Get the current 10-year treasury (risk-free rate)
+rfr = stock.get_10_year()
+
+# Calculate CAPM expected return (optionally pass a target market return)
+capm = stock.get_capm_return(target_return=0.07)
+
+# Plot volatility / standard deviation figure
+stock.make_stdev_fig()
+
+# Show Yahoo recommendation trends (bar chart)
+stock.make_yahoo_ratings_fig()
+
+# Discounted Cash Flow valuation (returns intrinsic value float)
+dcf_value = stock.dcf_valuation()
+
+# Print correlation of the ticker to SPY over several periods
+stock.correlation_to_spy()
 ```
 
 ## Dependencies

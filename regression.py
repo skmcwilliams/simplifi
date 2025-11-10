@@ -21,53 +21,53 @@ class PredictiveModel:
     def __init__(self):
         pass
     
-    def get_historical_data(self,ticker):
+    def format_historical_data(self,df:pd.DataFrame)->pd.DataFrame:
         """use yahooquery to pull historical data based on ticker, period requested, and interval requested"""
         
         # pull data for required period and create custom columns
-        main = yq.Ticker(ticker).history(period='max',interval='1d').reset_index() # get all data at max time for sma calcs
+        main = df.copy()
         ten = yq.Ticker('^tnx').history(period='max',interval='1d').reset_index().rename(columns={'close':'tenyr'})
         main = main.merge(ten[['date','tenyr']],on='date',how='left')
         
         main = main.assign(
-            adjclosesma = lambda x: round(x['adjclose'].rolling(30).mean(),2),
-            highfib = lambda x: round(x['adjclose'].rolling(200).max() - ((x['adjclose'].rolling(200).max() -x['adjclose'].rolling(200).min())*0.236),2),
-            lowfib = lambda x: round(x['adjclose'].rolling(200).min(),2) + \
-            ((round(x['adjclose'].rolling(200).max(),2)-round(x['adjclose'].rolling(200).min(),2))*0.236),
-            adjclosestd = lambda x: abs(round(x['adjclose'].rolling(200).std(),4)),
+            closesma = lambda x: round(x['close'].rolling(30).mean(),2),
+            highfib = lambda x: round(x['close'].rolling(200).max() - ((x['close'].rolling(200).max() -x['close'].rolling(200).min())*0.236),2),
+            lowfib = lambda x: round(x['close'].rolling(200).min(),2) + \
+            ((round(x['close'].rolling(200).max(),2)-round(x['close'].rolling(200).min(),2))*0.236),
+            closestd = lambda x: abs(round(x['close'].rolling(200).std(),4)),
             tenyrsma = lambda x: round(x['tenyr'].rolling(30).mean(),2),
             tenyrstd = lambda x: abs(round(x['tenyr'].rolling(30).std(),4)),
             tenyrsmastd = lambda x: x['tenyrstd']*x['tenyrsma'],
-            twohundredsma = lambda x: x['adjclose'].rolling(200).mean(),
-            fiftysma = lambda x: x['adjclose'].rolling(50).mean(),
-            higher_twohundred = lambda x: np.where(x['adjclose']>x['twohundredsma'],1,0),
-            higher_fifty = lambda x:  np.where(x['adjclose']>x['fiftysma'],1,0),
+            twohundredsma = lambda x: x['close'].rolling(200).mean(),
+            fiftysma = lambda x: x['close'].rolling(50).mean(),
+            higher_twohundred = lambda x: np.where(x['close']>x['twohundredsma'],1,0),
+            higher_fifty = lambda x:  np.where(x['close']>x['fiftysma'],1,0),
             volumestd = lambda x: abs(x['volume'].rolling(30).std()),
             volumesma = lambda x: x['volume'].rolling(30).mean(),
             volumesmastd = lambda x: np.log(x['volumesma'] * x['volumestd']),
-            adjclosesmastd = lambda x: x['adjclosesma'] * x['adjclosestd'],
-            #twohundred_sma_diff_pct = lambda x: round(x['adjclose']/x['twohundredsma']),
-           # twohundred_sma_diff_doll = lambda x: round(x['twohundredsma']-x['adjclose']),
-            gainthirty = lambda x: ((x['adjclose']/x['adjclose'].shift(30))-1)*100,
-            gainseven = lambda x: ((x['adjclose']/x['adjclose'].shift(7))-1)*100,
-           # gainday = lambda x: ((x['adjclose']/x['adjclose'].shift(1))-1)*100,
-            logclose = lambda x: np.log(x['adjclose']),
+            closesmastd = lambda x: x['closesma'] * x['closestd'],
+            #twohundred_sma_diff_pct = lambda x: round(x['close']/x['twohundredsma']),
+           # twohundred_sma_diff_doll = lambda x: round(x['twohundredsma']-x['close']),
+            gainthirty = lambda x: ((x['close']/x['close'].shift(30))-1)*100,
+            gainseven = lambda x: ((x['close']/x['close'].shift(7))-1)*100,
+           # gainday = lambda x: ((x['close']/x['close'].shift(1))-1)*100,
+            logclose = lambda x: np.log(x['close']),
             logten = lambda x: np.log(x['tenyr'])
              )
         
         # select columns
         final = main[['date',
                       'symbol',
-                      'adjclose',
+                      'close',
                       'logclose',
                       #'tenyr',
-                      #'adjclosesma',
+                      #'closesma',
                       #'highfib',
                       'higher_fifty',
                       'higher_twohundred',
                       #'lowfib',
-                      'adjclosestd',
-                      #'adjclosesmastd',
+                      'closestd',
+                      #'closesmastd',
                      # 'tenyrsma',
                      # 'tenyrstd',
                      # 'tenyrsmastd',
@@ -79,7 +79,7 @@ class PredictiveModel:
                      # 'gainday',
                       'gainthirty',
                       'gainseven',
-                      #'targetadjclose',
+                      #'targetclose',
                       #'twohundred_sma_diff_doll',
                       #'twohundred_sma_diff_pct'
                       ]]
@@ -91,11 +91,11 @@ class PredictiveModel:
     def add_days(self,dataframe,days:int):
         temp = dataframe.copy()
         for i in range(1,days+1):
-            temp[f'{i}_out'] = temp['adjclose'].shift(-i)
+            temp[f'{i}_out'] = temp['close'].shift(-i)
             yield temp
             
             
-    def score_model(self,x_train,x_test,y_train,y_test,y_hat,dataframe,ticker,model,dte):
+    def score_model(self,x_train,x_test,y_train,y_test,y_hat,dataframe,ticker,model,dte)->tuple[pd.DataFrame,pd.DataFrame]:
         df = dataframe.copy()
         global mape
         global testpreds
@@ -108,38 +108,38 @@ class PredictiveModel:
         testpreds['ssr'] = (testpreds['yhat'] - testpreds['actual'].mean())**2
         mape = round(np.mean(np.abs((testpreds['actual'] - testpreds['yhat']) / testpreds['actual'])) * 100,2)
         
-        
       #  print(f"PREDICTION ON TODAY'S {ticker} DATA in {dte} DTE")
         current_df = df[(df[f'{dte}_out'].isna()) * (df['date']==max(df['date']))]
         current_df.insert(1,'dte',dte)
         to_drop = [i for i in current_df.columns if "out" in i]
         to_drop.remove(f'{dte}_out')
         current_df = current_df.drop(columns=to_drop)
-        curr_x = current_df.drop(columns=['date','dte',f'{dte}_out','symbol','adjclose'])
+        curr_x = current_df.drop(columns=['date','dte',f'{dte}_out','symbol','close'])
         #print(curr_x.columns)
         currpreds = list(map(lambda x: round(x,2),model.predict(curr_x)))
         current_df.insert(3,'yhat',currpreds)
         current_df = current_df.assign(
             yhat_low = lambda x: round(x['yhat']*(1-((mape*0.5)/100)),2),
             yhat_high = lambda x: round(x['yhat']*(1+((mape*0.5)/100)),2))
-        return current_df[['dte','yhat','yhat_low','yhat_high']]
+        return (current_df[['dte','yhat','yhat_low','yhat_high']],testpreds)
         
     
-    def run_regression(self,ticker,dte,vizualize:bool=True):
+    def run_regression(self,ticker,dte,hist_data:pd.DataFrame,viz:bool=True):
       
         dte_yhats = pd.DataFrame()
-        originaldata = self.get_historical_data(ticker)
+        originaldata = self.format_historical_data(hist_data.copy())
         main = list(self.add_days(originaldata,dte))[-1]
         
+        test_df = pd.DataFrame()
         for i in range(1,dte+1):
             to_drop = [i for i in main.columns if "out" in i]
             to_drop.remove(f'{i}_out')
             df = main.drop(columns=to_drop)
             df = df.dropna().reset_index(drop=True)
             x_train, x_test, y_train, y_test = tts(df.drop(columns=['date',
-                                                                    #'targetadjclose',
+                                                                    #'targetclose',
                                                                     'symbol',
-                                                                    'adjclose',
+                                                                    'close',
                                                                     f'{i}_out']),
                                                                     df[f'{i}_out'],
                                                                     test_size=0.01,
@@ -149,11 +149,18 @@ class PredictiveModel:
             model = model.fit(x_train, y_train)
         
             y_hat = [round(x,2) for x in model.predict(x_test)]
-            new_yhat = self.score_model(x_train,x_test,y_train,y_test,y_hat,main,ticker,model,i)
+            new_yhat,results_temp = self.score_model(x_train,x_test,y_train,y_test,y_hat,main,ticker,model,i)
             dte_yhats = pd.concat([dte_yhats,new_yhat])
             dte_yhats['date'] = dte_yhats['dte'].apply(lambda x: timedelta(days=x)+date.today())
+            test_df = pd.concat([test_df,results_temp])
+        
+        mape = round(np.mean(np.abs((test_df['actual'] - test_df['yhat']) / test_df['actual'])) * 100,2)
+        print("--------------------------------------------------")
+        print(f"{ticker} MODEL RESULTS:")
+        print(f"Average Percentage Error Over Timeframe: {mape}%")
+        print("--------------------------------------------------")
 
-        if vizualize:
+        if viz:
             fig = go.Figure()
             fig.add_trace(go.Scatter(x=dte_yhats['dte'],
                                     y=dte_yhats['yhat'],
