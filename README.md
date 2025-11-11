@@ -1,6 +1,6 @@
 # Simplifi
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)  
+[![License](https://img.shields.io/badge/license-%20%20GNU%20GPLv3%20-green?style=plastic)](LICENSE)  
 [![Python](https://img.shields.io/badge/python-3.10%2B-brightgreen)](#)
 
 Simplifi is a compact Python library for financial analysis and stock-market data visualization. It combines data from multiple sources (notably Yahoo Finance via `yahooquery`) to provide a toolkit for historical data analysis, option pricing, valuation models, and simple forecasting.
