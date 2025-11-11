@@ -1,4 +1,72 @@
-/simplifi_env
-/__pycache__
+/simplifi_venv
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+simplifi_venv/
+.venv/
+venv/
+env/
+ENV/
+
+# Environment / secrets
+.env
+.env.*
+*.key
+*.pem
+*.crt
+credentials.ini
+local_settings.py
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+*.egg
+*.whl
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage
+htmlcov/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+nosetests.xml
+coverage.xml
+
+# IDEs / editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# macOS
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints
+
+# Logs
+*.log
+
+# Databases
+*.sqlite3
+*.db
+
+# Compiled C extensions / build artifacts
+*.so
+
+# Misc
+*.bak
+*.tmp
+*.swp/__pycache__
 .vscode
 *.pyc

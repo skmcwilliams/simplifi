@@ -157,6 +157,7 @@ class PredictiveModel:
         mape = round(np.mean(np.abs((test_df['actual'] - test_df['yhat']) / test_df['actual'])) * 100,2)
         print("--------------------------------------------------")
         print(f"{ticker} MODEL RESULTS:")
+        print(f"Forecasted Price per Share {dte} Days From Today: ${dte_yhats.loc[dte_yhats['dte']==dte,'yhat'].values[0]}")
         print(f"Average Percentage Error Over Timeframe: {mape}%")
         print("--------------------------------------------------")
 

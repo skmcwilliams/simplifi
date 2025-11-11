@@ -206,7 +206,7 @@ class Simplifi:
         rfr = self.rfr
         capm = rfr+beta*(rm-rfr) # CAPM formula
         print("--------------------------------------------------")
-        print("Valuation based on the following:")
+        print("CAPM Return Based on the Following:")
         print(f"Risk Free Rate (10yr Treasury): {round(rfr*100,2)}%")
         print(f"Expected Market Return: {round(rm*100,2)}%")
         print(f"Simplifi CAPM Return: {round(capm*100,2)}%")
@@ -306,7 +306,11 @@ class Simplifi:
 
         return df
         
-    def dcf_valuation(self):
+    def dcf_valuation(self,required_return:float=0.085,make_charts:bool=True)->float:
+        """ Discounted Cash Flow Valuation Method 
+        required_return: expected market return, default 8.5%
+        make_charts: bool to show charts or not
+        returns intrinsic value as float, along with short-term growth, long-term growth, and terminal growth rates"""
         q_bs_df = pd.DataFrame()
         a_cf_df=pd.DataFrame()
 
@@ -319,8 +323,9 @@ class Simplifi:
         cash_flow_df.insert(0,'Period',cash_flow_df['year']+'-'+cash_flow_df['periodType'])
         
         # PLOT HISTORICAL CASH FLOWS
-        cf_fig = px.bar(data_frame=cash_flow_df,x='Period',y='FreeCashFlow',orientation='v',title=f'{self.ticker} Historical Free Cash Flows')
-        cf_fig.show()
+        if make_charts:
+            cf_fig = px.bar(data_frame=cash_flow_df,x='Period',y='FreeCashFlow',orientation='v',title=f'{self.ticker} Historical Free Cash Flows')
+            cf_fig.show()
         
         # CREATE VARIABLES TO PRINT AT BEGINNING
         try:
@@ -355,8 +360,8 @@ class Simplifi:
             quick_ratio = 0
         
         print(f'{self.ticker.upper()} Financial Overview')
-        print(f"Free Cash Flow: ${millify(cash_flow)}")
-        print(f"Total Debt: ${millify(total_debt)} ")
+        print(f"Free Cash Flow: ${millify(cash_flow,3)}")
+        print(f"Total Debt: ${millify(total_debt,3)} ")
         print(f"Cash and ST Investments: ${millify(cash_and_ST_investments)}")
         print(f"Quick Ratio: {round(quick_ratio,3)}")
         
@@ -367,22 +372,20 @@ class Simplifi:
         except KeyError:
             beta=1.75 # if no beta available, set to 1.75 for higher risk
 
-
-        # LEFT OFF HERE IN THE DCF CALC, NEED WORKAROUND FOR FINVIZ TO COMPLETE THE REMAINING
         current_price = self.price
         shares_outstanding = total_equity/current_price
         income_stmnt = self.yf.income_statement()
         income_stmnt = income_stmnt[income_stmnt['asOfDate']==income_stmnt['asOfDate'].max()]
         tax_rate = income_stmnt['TaxRateForCalcs'].iloc[0].astype(float)
         treasury = self.rfr
-        wacc = self.__get_wacc(total_debt,total_equity,debt_payment,tax_rate,beta,treasury,self.ticker)
+        wacc = self.__get_wacc(total_debt,total_equity,debt_payment,tax_rate,beta,treasury,required_return)
         
         # CALL DCF VALUATION
         intrinsic_value = self.__intrinsic_value(cash_flow_df, total_debt, 
                                                     cash_and_ST_investments, 
-                                                    wacc,shares_outstanding)
+                                                    wacc,shares_outstanding,make_charts)
         
-        print(f"Simplifi DCF Valuation: ${round(intrinsic_value,2)}")
+        print(f"Simplifi DCF Valuation: ${millify(intrinsic_value[0],2)} per share")
         print(f"Based on WACC of {round(wacc*100,2)}%")
         return intrinsic_value
     
@@ -397,41 +400,45 @@ class Simplifi:
                             title=f'{self.ticker} Yahoo Recommendation Trends')
         ratings_fig.show()
 
-    def make_stdev_fig(self)->go.Figure:
+    def get_price_std_dev(self,make_plot:bool=False)->pd.DataFrame:
+        """Calculate and plot the 7-day and 30-day standard deviation"""
         df = self.historical_df.copy()
         df['30_std'] = (df['close'].rolling(30).std()/df['close'])*100 #std over 30 days divided by current price
         df['7_std'] = (df['close'].rolling(7).std()/df['close'])*100 #std over 7 days divided by current price
         #df['60_std'] = (df['close'].rolling(60).std()/df['close'].rolling(60).mean())*100
-        stdev_fig = make_subplots(specs=[[{"secondary_y": True}]])
-        
-        stdev_fig.add_trace(go.Bar(x=df['date'],
-                                y=df['30_std'],
-                                name='30-Day StDev',
-                                marker=dict(color='magenta',opacity=0.3)),
-                                secondary_y=True)
-        
-        stdev_fig.add_trace(go.Bar(x=df['date'],
-                                y=df['7_std'],
-                                name='7-Day StDev',
-                                marker=dict(color='navy',opacity=0.3)),
-                                secondary_y=True)
-        
-        stdev_fig.add_trace(go.Scatter(x=df['date'],
-                                    y=df['close'],
-                                    name='Price',
-                                    line_color='cyan'),
-                                    secondary_y=False)
-        
+        if make_plot:
+            stdev_fig = make_subplots(specs=[[{"secondary_y": True}]])
+            
+            stdev_fig.add_trace(go.Bar(x=df['date'],
+                                    y=df['30_std'],
+                                    name='30-Day StDev',
+                                    marker=dict(color='magenta',opacity=0.3)),
+                                    secondary_y=True)
+            
+            stdev_fig.add_trace(go.Bar(x=df['date'],
+                                    y=df['7_std'],
+                                    name='7-Day StDev',
+                                    marker=dict(color='navy',opacity=0.3)),
+                                    secondary_y=True)
+            
+            stdev_fig.add_trace(go.Scatter(x=df['date'],
+                                        y=df['close'],
+                                        name='Price',
+                                        line_color='cyan'),
+                                        secondary_y=False)
+            
 
+            
+            stdev_fig.layout.yaxis2.showgrid=False
+            stdev_fig.update_xaxes(type='category',nticks=10,tickangle=15)
+            stdev_fig.update_layout(title_text=f'{self.ticker} 5-Year Volatility-Price Chart',
+                                xaxis=dict(rangeslider=dict(visible=False)),barmode='group')
+            stdev_fig.update_yaxes(title_text="StDev as % of Price", secondary_y=True)
+            stdev_fig.update_yaxes(title_text="Price ($)", secondary_y=False)
+            stdev_fig.show()
+        else:
         
-        stdev_fig.layout.yaxis2.showgrid=False
-        stdev_fig.update_xaxes(type='category',nticks=10,tickangle=15)
-        stdev_fig.update_layout(title_text=f'{self.ticker} 5-Year Volatility-Price Chart',
-                            xaxis=dict(rangeslider=dict(visible=False)),barmode='group')
-        stdev_fig.update_yaxes(title_text="StDev as % of Price", secondary_y=True)
-        stdev_fig.update_yaxes(title_text="Price ($)", secondary_y=False)
-        
-        return stdev_fig.show()
+            return df[['date','close','7_std','30_std']]
     
     def __get_wacc(self,total_debt,equity,debt_pmt,tax_rate,beta,rfr,required_return)->float:
         
@@ -454,7 +461,7 @@ class Simplifi:
     
 
     def __intrinsic_value(self,cash_flow_df, total_debt, cash_and_ST_investments, 
-                                    discount_rate,shares_outstanding,name)->tuple[go.Figure,float,float,float,float]:
+                                    discount_rate,shares_outstanding,make_charts:bool=True)->tuple[float,float,float,float]:
         eps_data = self.yf.key_stats[self.ticker]
 
         def readable_nums(num_list):
@@ -501,8 +508,13 @@ class Simplifi:
         intrinsic_value = (sum(dcf_list) - total_debt + cash_and_ST_investments)/shares_outstanding
         df = pd.DataFrame.from_dict({'Year Out': year_list, 'Future Value': cf_list, 'Present Value': dcf_list})
         
-        fig = px.bar(df,x='Year Out',y=['Future Value','Present Value'],barmode='group',color_discrete_sequence=['navy','paleturquoise'])
-        fig.update_layout(title=f'{name} Projected Free Cash Flows',yaxis_title='Free Cash Flow ($)',legend_title='')
+        if make_charts:
+            fig = px.bar(df,x='Year Out',y=['Future Value','Present Value'],barmode='group',color_discrete_sequence=['navy','paleturquoise'])
+            fig.update_layout(title=f'{self.ticker} Projected Free Cash Flows',
+                            yaxis_title='Free Cash Flow ($)',
+                            legend_title='',
+                            )
+            fig.show()
         y1 = list(readable_nums(df['Future Value']))
         y2 = list(readable_nums(df['Present Value']))
         texts = [y1,y2]
@@ -510,18 +522,18 @@ class Simplifi:
             fig.data[i].text = t
             fig.data[i].textposition = 'outside'
     
-        return fig, intrinsic_value, st_growth, lt_growth,terminal_growth
+        return intrinsic_value, st_growth, lt_growth,terminal_growth
     
 
-# Testing
+# Example usage
 if __name__ == '__main__':
     simplifi = Simplifi('ULTA')
-    # simplifi.blackscholes()
-    # simplifi.get_historical_data(make_ohlc=True)
-    # simplifi.ddm_valuation()
-    # simplifi.get_capm_return(target_return=0.07)
-    # simplifi.run_regression(dte=10,make_viz=True)
-    # simplifi.make_stdev_fig()
-    # simplifi.make_yahoo_ratings_fig()
-    simplifi.dcf_valuation()
+    simplifi.blackscholes()
+    simplifi.get_historical_data(make_ohlc=True)
+    simplifi.ddm_valuation()
+    simplifi.get_capm_return(target_return=0.07)
+    simplifi.run_regression(dte=10,make_viz=True)
+    simplifi.get_price_std_dev()
+    simplifi.make_yahoo_ratings_fig()
+    simplifi.dcf_valuation(0.07)
     simplifi.make_comp_chart()
