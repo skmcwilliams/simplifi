@@ -1,119 +1,174 @@
 # Simplifi
 
-A comprehensive Python library for financial analysis and stock market data visualization. This library combines data from multiple sources including Yahoo Finance to provide a rich set of financial analysis tools.
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)  
+[![Python](https://img.shields.io/badge/python-3.10%2B-brightgreen)](#)
+
+Simplifi is a compact Python library for financial analysis and stock-market data visualization. It combines data from multiple sources (notably Yahoo Finance via `yahooquery`) to provide a toolkit for historical data analysis, option pricing, valuation models, and simple forecasting.
 
 ## Features
 
-- **Historical Data Analysis**
-  - Fetch and process historical data from YahooQuery (Yahoo Finance)
-  - Calculate average prices and logarithmic returns for BlackScholes model, along with moving averages for technical analysis
-  - Option to generate interactive OHLC (Open-High-Low-Close) candlestick chart in browser
-  - Chart includes additional measures such as moving average and volume
-  - Interactive buttons to select various time-based views and select/unselect data points
-  - Returns historical dataframe with additional calculations
+- Historical data analysis
+  - Fetch and process historical data from Yahoo Finance (`yahooquery`).
+  - Compute averages, log returns, and moving averages (50/200 day) used in analysis and charts.
+  - Optional interactive OHLC candlestick charts (Plotly) including volume and moving averages.
 
-- **Options Analysis**
-  - Black-Scholes option pricing model implementation
-  - Prices entire options chain and returns pandas dataframe of option data
+- Options analysis
+  - Black–Scholes implementation for option pricing and tools to price an options chain.
 
-- **Dividend Discount Model**
-  - Fetch stock valuation based on Gordon Growth Model calculations
-  - Cost of Equity calculations
-  - Risk-free rate analysis based on 10yr Treasury
+- Valuation models
+  - Dividend Discount Model (Gordon Growth) for simple intrinsic valuation.
+  - Discounted Cash Flow (DCF) helper (if financials are available).
 
-**Get 10 Year**
-  - Returns float of the 10-year treasury, a standard risk-free-rate
-  - Cost of Equity calculations
-  - Risk-free rate analysis based on 10yr Treasury
+- Risk & return helpers
+  - Fetch current 10-year Treasury yield (risk-free rate) and compute Cost of Equity / CAPM expected return.
 
-**Calculation CAPM Return**
-  - Returns float expected return using Capital Asset Pricing Model, prints results and assumptions to terminal
-  - Based on standard annual 8.5% target return, can be overriden using optional target_return parameter
-
-  **Regression Model**
-  - Regression model calculates future price for ticker based on time-series data, ticker price trends, and standard deviations
-  - Returns dataframe consisting of the prediction as well as the high and low-end possibilities of price from Day0(today) to the user-defined number of trading days for which to predict
-  - Plotly chart is returned via browser, providing visual of the same
+- Simple forecasting
+  - Regression-based short-term price forecasts with high/low bands and optional Plotly visualization.
 
 ## Installation
 
-```bash
-git clone https://github.com/skmcwilliams/simplifi
-```
-### Quickstart
+Clone the repo and install dependencies. Two common options are shown below; choose the one you prefer.
+
+Using a standard venv:
 
 ```bash
+git clone https://github.com/skmcwilliams/simplifi.git
+cd simplifi
 python3 -m venv .simplifi_venv
 source .simplifi_venv/bin/activate
 pip install -r requirements.txt
 ```
 
+Using the included Pipfile (pipenv):
+
+```bash
+git clone https://github.com/skmcwilliams/simplifi.git
+cd simplifi
+pipenv install --dev
+pipenv shell
+```
+
+Notes:
+- The repository includes a `Pipfile` and `requirements.txt`. For reproducible installs prefer the pinned file if available.
+- Tested on Python 3.10–3.13 (your mileage may vary on earlier versions).
+
 ## Usage
 
-### Basic Usage
+Below are concise, copy-paste-friendly examples. Most methods return a pandas DataFrame or a float (noted where relevant).
+
+Minimal example
 
 ```python
 from simplifi import Simplifi
 
-# Create an instance for a specific stock
-stock = Simplifi('ULTA')
-
-# Get historical data
-historical_data_df = stock.get_historical_data()
-
-# Get Black-Scholes option valuations
-options_analysis_df = stock.blackscholes()
-
+s = Simplifi('SO')
+df = s.get_historical_data()          # returns pd.DataFrame
+print(df.tail())
 ```
 
-### Advanced Features
+Black–Scholes example
 
-#### OHLC Chart Generation
 ```python
-# Get historical data with OHLC chart
-historical_data_df = stock.get_historical_data(make_ohlc=True)
+from simplifi import Simplifi
+
+s = Simplifi('MMM')
+opts = s.blackscholes()               # returns pd.DataFrame of options pricing
+print(opts.head())
 ```
 
-Example OHLC chart output:
+OHLC chart with visualization
 
+```python
+s = Simplifi('F')
+s.get_historical_data(make_ohlc=True) # opens interactive Plotly chart in browser
+```
+
+Dividend Discount Model
+
+```python
+s = Simplifi('KO')
+intrinsic = s.ddm_valuation()         # returns float intrinsic value
+print(intrinsic)
+```
+
+Regression forecasting (10 trading days)
+
+```python
+s = Simplifi('CSCO')
+pred = s.run_regression(dte=10, make_viz=True)  # pd.DataFrame with prediction bands, returns glidepath in chart via plotly in browser
+```
+
+## Example charts
+
+Below are the example charts included in this repository. Each image demonstrates a visualization produced by the library and includes a short description of what the chart shows.
+
+### OHLC (candlestick) chart
 ![OHLC Chart Example](ohlc.png)
 
-Example Forecast chart output:
+An interactive OHLC candlestick chart showing price action with 50- and 200-day moving averages and volume displayed beneath. Useful for technical analysis and inspecting individual trading days.
 
+### Forecast / Regression chart
 ![Forecast Chart Example](predicted.png)
 
-#### Dividend Discount Model Valuation
-```python
-# Calculate stock valuation using DDM
-ddm_valuation = stock.ddm_valuation()
+Shows the regression-based forecast (prediction line) with high/low or confidence bands over the prediction horizon. This chart is produced by `run_regression(..., make_viz=True)`.
 
-# Future price prediction using regression 10 days out
-predicted_df = stock.run_regression(dte=10,visualize=True)
-```
+### Yahoo Finance recommendations
+![Yahoo Finance Recommendations Chart Example](yahoofinance_recs.png)
 
-## Dependencies
+A bar chart of analyst recommendation trends sourced from Yahoo Finance (e.g., buy/hold/sell counts over time or recent snapshots).
 
-- numpy
-- pandas
-- plotly
-- yahooquery
-- beautifulsoup4
-- requests
-- scipy
-- scikit-learn
+### Volatility chart
+![Volatility Chart Example](volatility.png)
 
-## Data Sources
-- Yahoo Finance (via yahooquery)
+Displays rolling volatility or standard deviation measures for the ticker over time — helpful to visualize changing risk levels.
 
-## Notes
-- Features require internet connection for real-time data
-- OHLC charts include 50-day and 200-day moving averages
-- Black-Scholes calculations use the current 10-year Treasury rate as the risk-free rate
+### Historical Free Cash Flows
+![Free Cash Flows Chart Example](fcf.png)
 
-## License
+Historical free cash flows (FCF) across reported periods — used as inputs for valuations such as DCF.
 
-See the LICENSE file for details.
+### Projected Free Cash Flows
+![Projected Free Cash Flows Chart Example](projected_fcf.png)
+
+Projected or modeled future free cash flows used to estimate intrinsic value via a DCF approach.
+
+### Ticker vs Indices comparison
+![Ticker vs. Indices Chart Example](comp_chart.png)
+
+Comparison of the ticker's performance against benchmark indices or ETFs (e.g., SPY,QQQ,DIA) to show correlation and relative performance.
+
+## API (high-level)
+
+Primary public methods on the `Simplifi` class (one-line summaries):
+
+- `Simplifi(ticker: str)` — constructor for a ticker symbol.
+- `get_historical_data(period='1y', interval='1d', make_ohlc=False) -> pd.DataFrame` — fetches OHLCV and computed columns (moving averages, returns).
+- `blackscholes(...) -> pd.DataFrame` — prices options using Black–Scholes model for the ticker's entire option chain.
+- `ddm_valuation(...) -> float` — simple Dividend Discount Model valuation (Gordon Growth), prints valuation variables and returns value.
+- `dcf_valuation(...) -> float` — Calculates DCF Value based on expected future cash flows
+- `get_10_year() -> float` — returns current 10-year Treasury yield (risk-free rate).
+- `get_capm_return(target_return: float=0.085) -> float` — estimates expected return via CAPM.
+- `run_regression(dte: int, make_viz: bool=False) -> pd.DataFrame` — simple regression forecast with bands.
+
+Refer to the docstrings in the source for parameter details and optional keyword arguments.
+
+## Dependencies & Compatibility
+
+- See `requirements.txt` and `Pipfile` for pinned dependencies.
+- Tested on Python 3.10, 3.11 and 3.13 in a local virtualenv. Key packages include `pandas`, `numpy`, `plotly`, `yahooquery`, `scipy`, and `scikit-learn`.
 
 ## Contributing
 
-Please feel free to submit a Pull Request.
+Contributions are welcome. Suggested workflow:
+
+1. Fork the repo and create a feature branch.
+2. Create a virtualenv and install requirements.
+3. Add tests for new behavior (there are currently no automated tests in the repository; please add pytest-based tests in `tests/` when possible).
+4. Open a PR with a descriptive title and summary of changes.
+
+Style notes: follow PEP8; using `black` for formatting is encouraged.
+
+## License
+
+This project is licensed under the terms in the `LICENSE` (GPL) file.
+
