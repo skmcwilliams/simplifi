@@ -49,18 +49,18 @@ class Simplifi:
         df = self.historical_df.copy() # get daily ticker data
         df = df.sort_values(by='date',ascending=True).reset_index()
         df = df.tail(30) # lasty 30 trading days for stdev calc
-        options = simplifi.yf.option_chain.reset_index()
+        options = self.yf.option_chain.reset_index()
         options['dte'] = (pd.to_datetime(options['expiration']) - pd.to_datetime("now")).dt.days
         options['t'] = options['dte']/365
         # get option data for analysis
         self.sd = round(df['log_returns'].std() * sqrt(252),2) # annualize stdev of log daily returns based on # of annual trading days
         r = self.rfr # risk-free rate based on 10-year treasury
-        options['d1'] = (np.log(options['lastPrice']/options['strike']) + (r + self.sd**2/2)* options['t'])/(self.sd*np.sqrt(options['t']))
+        options['d1'] = (np.log(self.price/options['strike']) + (r + self.sd**2/2)* options['t'])/(self.sd*np.sqrt(options['t']))
         options['d2'] = options['d1'] - self.sd * np.sqrt(options['t'])
-        options['black_scholes_value'] = np.where(options['optionType']=="calls",options['lastPrice']* norm.cdf(options['d1'], 0, 1) - \
+        options['black_scholes_value'] = np.where(options['optionType']=="calls",self.price* norm.cdf(options['d1'], 0, 1) - \
                                                     options['strike'] * np.exp(-r * options['t']) * norm.cdf(options['d2'], 0, 1),np.where(
                                                         options['optionType']=='puts',options['strike'] * np.exp(-r * options['t']) * \
-                                                        norm.cdf(-options['d2'], 0, 1) - options['lastPrice'] * norm.cdf(-options['d1'], 0, 1),np.nan))
+                                                        norm.cdf(-options['d2'], 0, 1) - self.price* norm.cdf(-options['d1'], 0, 1),np.nan))
         options = options[['symbol',
                            'expiration',
                            'dte',
@@ -190,7 +190,7 @@ class Simplifi:
             price = self.yf.summary_detail[self.ticker]['previousClose']
             coe = (nxt_yr_div / price) + self.yf.summary_detail[self.ticker]["dividendRate"]
             ddm_val = nxt_yr_div/(coe-growth)
-            print(f"Simplifi DDM Valuation: ${round(ddm_val*100,2)}")
+            print(f"Simplifi {self.ticker} DDM Valuation: ${round(ddm_val*100,2)}")
             print("--------------------------------------------------")
             return ddm_val
  
@@ -209,7 +209,7 @@ class Simplifi:
         print("CAPM Return Based on the Following:")
         print(f"Risk Free Rate (10yr Treasury): {round(rfr*100,2)}%")
         print(f"Expected Market Return: {round(rm*100,2)}%")
-        print(f"Simplifi CAPM Return: {round(capm*100,2)}%")
+        print(f"Simplifi {self.ticker} CAPM Return: {round(capm*100,2)}%")
         print("--------------------------------------------------")
         return capm
     
