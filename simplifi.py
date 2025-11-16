@@ -515,12 +515,12 @@ class Simplifi:
                             legend_title='',
                             )
             fig.show()
-        y1 = list(readable_nums(df['Future Value']))
-        y2 = list(readable_nums(df['Present Value']))
-        texts = [y1,y2]
-        for i, t in enumerate(texts):
-            fig.data[i].text = t
-            fig.data[i].textposition = 'outside'
+            y1 = list(readable_nums(df['Future Value']))
+            y2 = list(readable_nums(df['Present Value']))
+            texts = [y1,y2]
+            for i, t in enumerate(texts):
+                fig.data[i].text = t
+                fig.data[i].textposition = 'outside'
     
         return intrinsic_value, st_growth, lt_growth,terminal_growth
     
