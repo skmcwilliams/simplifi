@@ -129,30 +129,56 @@ class PredictiveModel:
         dte_yhats = pd.DataFrame()
         originaldata = self.format_historical_data(hist_data.copy())
         main = list(self.add_days(originaldata,dte))[-1]
-        
         test_df = pd.DataFrame()
-        for i in range(1,dte+1):
+        if viz:
+            dte_yhats_list = list()
+            results_df_list = list()
+            for i in range(1,dte+1):
+                to_drop = [i for i in main.columns if "out" in i]
+                to_drop.remove(f'{i}_out')
+                df = main.drop(columns=to_drop)
+                df = df.dropna().reset_index(drop=True)
+                x_train, x_test, y_train, y_test = tts(df.drop(columns=['date',
+                                                                        #'targetclose',
+                                                                        'symbol',
+                                                                        'close',
+                                                                        f'{i}_out']),
+                                                                        df[f'{i}_out'],
+                                                                        test_size=0.01,
+                                                                        shuffle=False,
+                                                                        random_state=42)
+                model =  GB() #tree.DecisionTreeRegressor(max_depth=10,min_samples_split=5,criterion='squared_error')
+                model = model.fit(x_train, y_train)
+            
+                y_hat = [round(x,2) for x in model.predict(x_test)]
+                new_yhat,results_temp = self.score_model(x_train,x_test,y_train,y_test,y_hat,main,ticker,model,i)
+                dte_yhats_list.append(new_yhat)
+                results_df_list.append(results_temp)
+            dte_yhats = pd.concat(dte_yhats_list)
+            dte_yhats['date'] = dte_yhats['dte'].apply(lambda x: timedelta(days=x)+date.today())
+            test_df = pd.concat(results_df_list)
+        else:
             to_drop = [i for i in main.columns if "out" in i]
-            to_drop.remove(f'{i}_out')
+            to_drop.remove(f'{dte}_out')
             df = main.drop(columns=to_drop)
             df = df.dropna().reset_index(drop=True)
             x_train, x_test, y_train, y_test = tts(df.drop(columns=['date',
-                                                                    #'targetclose',
-                                                                    'symbol',
-                                                                    'close',
-                                                                    f'{i}_out']),
-                                                                    df[f'{i}_out'],
-                                                                    test_size=0.01,
-                                                                    shuffle=False,
-                                                                    random_state=42)
+                                                                        #'targetclose',
+                                                                        'symbol',
+                                                                        'close',
+                                                                        f'{dte}_out']),
+                                                                        df[f'{dte}_out'],
+                                                                        test_size=0.01,
+                                                                        shuffle=False,
+                                                                        random_state=42)
             model =  GB() #tree.DecisionTreeRegressor(max_depth=10,min_samples_split=5,criterion='squared_error')
             model = model.fit(x_train, y_train)
         
             y_hat = [round(x,2) for x in model.predict(x_test)]
-            new_yhat,results_temp = self.score_model(x_train,x_test,y_train,y_test,y_hat,main,ticker,model,i)
-            dte_yhats = pd.concat([dte_yhats,new_yhat])
+            new_yhat,results_temp = self.score_model(x_train,x_test,y_train,y_test,y_hat,main,ticker,model,dte)
+            dte_yhats = new_yhat.copy()
             dte_yhats['date'] = dte_yhats['dte'].apply(lambda x: timedelta(days=x)+date.today())
-            test_df = pd.concat([test_df,results_temp])
+            test_df = results_temp.copy()
         
         mape = round(np.mean(np.abs((test_df['actual'] - test_df['yhat']) / test_df['actual'])) * 100,2)
         print("--------------------------------------------------")
