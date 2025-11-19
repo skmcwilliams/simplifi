@@ -224,6 +224,13 @@ class Simplifi:
         indices_ticker = yq.Ticker(indices)
         joint_df = indices_ticker.history('10y','1d').reset_index()
         joint_df = joint_df.sort_values(by=['symbol','date'],ascending=True).reset_index(drop=True)
+        if 'symbol' in joint_df.columns:
+            joint_df = joint_df.copy()
+            joint_df['symbol'] = joint_df['symbol'].astype(str)
+        if 'date' in joint_df.columns:
+            joint_df['date'] = joint_df['date'].apply(lambda x: str(x).split()[0])
+            joint_df['date'] = pd.to_datetime(joint_df['date'], errors='coerce')
+        joint_df = joint_df.sort_values(by=['symbol','date'],ascending=[True,True]).reset_index(drop=True)
         joint_df = joint_df[['symbol','date','close']]
         # compute percent change per symbol relative to that symbol's first close value
         joint_df['pct_change'] = joint_df.groupby('symbol')['close'].transform(lambda x: (x - x.iloc[0]) / x.iloc[0])
