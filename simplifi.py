@@ -50,7 +50,7 @@ class Simplifi:
         df = df.sort_values(by='date',ascending=True).reset_index()
         df = df.tail(30) # lasty 30 trading days for stdev calc
         options = self.yf.option_chain.reset_index()
-        options['dte'] = (pd.to_datetime(options['expiration']) - pd.to_datetime("now")).dt.days
+        options['dte'] = (pd.to_datetime(options['expiration']) - pd.to_datetime("now")).dt.days+1
         options['t'] = options['dte']/365
         # get option data for analysis
         self.sd = round(df['log_returns'].std() * sqrt(252),2) # annualize stdev of log daily returns based on # of annual trading days
